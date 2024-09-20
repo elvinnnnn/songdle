@@ -1,20 +1,53 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import YoutubePlayer from "./components/YoutubePlayer";
 
-const SPOTIFY_CLIENT_ID = "5ba334e99fe74fd1b3894003e0e33d5a";
-const SPOTIFY_CLIENT_SECRET = "3d53e43f208148059b57ced13b7ea38b";
+require("dotenv").config({ path: "songdle/my-app/.env.local" });
+// Access environment variables
+const SPOTIFY_CLIENT_ID = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+const SPOTIFY_CLIENT_SECRET = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET;
+
+// Encode the client ID and secret for the Authorization header
 const auth_token = Buffer.from(
-  `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`,
-  "utf-8"
+  `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
 ).toString("base64");
 
 export default function Home() {
   const [artist, setArtist] = useState("");
   const [tracks, setTracks] = useState([]);
+  const [videoId, setVideoId] = useState("");
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+
+  const prevIndex = () => {
+    return currentTrackIndex > 0 ? currentTrackIndex - 1 : tracks.length - 1;
+  };
+
+  const nextIndex = () => {
+    return currentTrackIndex < tracks.length - 1 ? currentTrackIndex + 1 : 0;
+  };
+
+  const handlePrevClick = () => {
+    const newIndex = prevIndex();
+    setCurrentTrackIndex(newIndex);
+    playTrack(tracks[newIndex]);
+  };
+
+  const handleNextClick = () => {
+    const newIndex = nextIndex();
+    setCurrentTrackIndex(newIndex);
+    playTrack(tracks[newIndex]);
+  };
+
+  const playAgain = () => {
+    setVideoId("");
+    setTimeout(() => {
+      playTrack(tracks[currentTrackIndex]);
+    }, 0);
+  };
 
   const handleArtistChange = (e) => {
-    setArtist(e.target.value.replace(/ /g, "+"));
+    setArtist(e.target.value);
   };
 
   const handleTracksChange = (tracks) => {
@@ -22,15 +55,14 @@ export default function Home() {
   };
 
   const handleButtonClick = async () => {
-    await getTracks(artist);
-    console.log(tracks);
+    const query = artist.replace(/ /g, "+");
+    await getTracks(query);
   };
 
   const getSpotifyAccessToken = async () => {
     try {
       //make post request to SPOTIFY API for access token, sending relavent info
       const token_url = "https://accounts.spotify.com/api/token";
-
       const response = await axios.post(
         token_url,
         { grant_type: "client_credentials" },
@@ -41,18 +73,14 @@ export default function Home() {
           },
         }
       );
-      //return access token
       return response.data.access_token;
-      //console.log(response.data.access_token);
     } catch (error) {
-      //on fail, log the error in console
       console.log(error);
     }
   };
 
   const getTracks = async (artist) => {
     const token = await getSpotifyAccessToken();
-    console.log(token);
     const playlist_res = await axios.get(
       `https://api.spotify.com/v1/search?q=this+is+${artist}&type=playlist&limit=1&offset=0`,
       {
@@ -63,7 +91,7 @@ export default function Home() {
     );
     const playlist_id = playlist_res.data.playlists.items[0].id;
     const tracks_res = await axios.get(
-      `https://api.spotify.com/v1/playlists/${playlist_id}/tracks?fields=items%28track%28name%2Cid%29%29&limit=30&offset=0`,
+      `https://api.spotify.com/v1/playlists/${playlist_id}/tracks?fields=items%28track%28name,uri%29%29&limit=20&offset=0`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -73,10 +101,22 @@ export default function Home() {
     const tracks = tracks_res.data.items.map((item) => {
       return {
         name: item.track.name,
-        id: item.track.id,
+        uri: item.track.uri,
       };
     });
+    console.log(tracks);
     handleTracksChange(tracks);
+    playTrack(tracks[0]);
+  };
+
+  const playTrack = async (track) => {
+    const query = `${artist} ${track.name} audio`;
+    const res = await axios.get(
+      `https://www.googleapis.com/youtube/v3/search?key=AIzaSyA8F2vcphh6vSflDWsqs3ZP5e7epPh7ioA&q=${query}&type=video&part=snippet&maxResults=1`
+    );
+
+    const videoId = res.data.items[0].id.videoId;
+    setVideoId(videoId);
   };
 
   return (
@@ -93,9 +133,28 @@ export default function Home() {
           <div>
             <ul>
               {tracks.map((track) => (
-                <li key={track.id}>{track.name}</li>
+                <li key={track.uri}>{track.name}</li>
               ))}
             </ul>
+            {tracks.length > 0 ? (
+              <>
+                <iframe
+                  width="560"
+                  height="315"
+                  src={`https://www.youtube.com/embed/${videoId}?start=10&end=11&autoplay=1`}
+                  allow="autoplay"
+                  style={{
+                    position: "absolute",
+                    width: 0,
+                    height: 0,
+                    border: 0,
+                  }}
+                ></iframe>
+                <button onClick={handlePrevClick}> Prev </button>
+                <button onClick={handleNextClick}> Next </button>
+                <button onClick={playAgain}> Replay </button>
+              </>
+            ) : null}
           </div>
         </div>
       </div>
