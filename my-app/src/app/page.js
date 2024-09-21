@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import YoutubePlayer from "./components/YoutubePlayer";
+import Intro from "./components/Intro";
 
 require("dotenv").config({ path: "songdle/my-app/.env.local" });
 // Access environment variables
@@ -17,6 +18,7 @@ export default function Home() {
   const [artist, setArtist] = useState("");
   const [tracks, setTracks] = useState([]);
   const [videoId, setVideoId] = useState("");
+  const [page, setPage] = useState("intro");
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
   const prevIndex = () => {
@@ -54,9 +56,15 @@ export default function Home() {
     setTracks(tracks);
   };
 
-  const handleButtonClick = async () => {
+  const handleButtonClick = async (artist) => {
+    setPage("game");
     const query = artist.replace(/ /g, "+");
     await getTracks(query);
+  };
+
+  const handleToIntro = () => {
+    setPage("intro");
+    setTracks([]);
   };
 
   const getSpotifyAccessToken = async () => {
@@ -121,21 +129,14 @@ export default function Home() {
 
   return (
     <div>
-      <div>Songdle.</div>
-      <div>
+      {page == "intro" ? (
+        <Intro onButtonClick={handleButtonClick} />
+      ) : (
         <div>
-          <input
-            placeholder="Artist's Name Here"
-            value={artist}
-            onChange={handleArtistChange}
-          ></input>
-          <button onClick={handleButtonClick}>Let's Play!</button>
+          <button onClick={handleToIntro} className="text-5xl font-bold">
+            Songdle.
+          </button>
           <div>
-            <ul>
-              {tracks.map((track) => (
-                <li key={track.uri}>{track.name}</li>
-              ))}
-            </ul>
             {tracks.length > 0 ? (
               <>
                 <iframe
@@ -150,14 +151,32 @@ export default function Home() {
                     border: 0,
                   }}
                 ></iframe>
-                <button onClick={handlePrevClick}> Prev </button>
-                <button onClick={handleNextClick}> Next </button>
-                <button onClick={playAgain}> Replay </button>
+                <button
+                  className="block bg-black hover:bg-neutral-800 w-full p-4 text-white font-bold py-2 px-4 rounded-full"
+                  onClick={handlePrevClick}
+                >
+                  {" "}
+                  Prev{" "}
+                </button>
+                <button
+                  className="block bg-black hover:bg-neutral-800 w-full p-4 text-white font-bold py-2 px-4 rounded-full"
+                  onClick={handleNextClick}
+                >
+                  {" "}
+                  Next{" "}
+                </button>
+                <button
+                  className="block bg-black hover:bg-neutral-800 w-full p-4 text-white font-bold py-2 px-4 rounded-full"
+                  onClick={playAgain}
+                >
+                  {" "}
+                  Replay{" "}
+                </button>
               </>
             ) : null}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
