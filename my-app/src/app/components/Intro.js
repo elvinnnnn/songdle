@@ -1,13 +1,25 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 export default function Intro({ onButtonClick }) {
   const [artist, setArtist] = useState("");
+  const inputRef = useRef(null);
+
   const handleArtistChange = (e) => {
     setArtist(e.target.value);
   };
   const handleButtonClick = () => {
     onButtonClick(artist);
   };
+
+  const adjustInputWidth = () => {
+    const input = inputRef.current;
+    input.style.width = `${input.scrollWidth}px`;
+  };
+  useEffect(() => {
+    if (artist === "") {
+      inputRef.current.style.width = "5rem";
+    }
+  }, [artist]);
   return (
     <div className="flex h-screen justify-center items-center">
       <div>
@@ -18,10 +30,12 @@ export default function Intro({ onButtonClick }) {
               How well do you know{" "}
               <input
                 type="text"
-                spellcheck="false"
+                spellCheck="false"
                 value={artist}
                 onChange={handleArtistChange}
-                className="text-2xl focus:outline-none border-b-2 border-black"
+                ref={inputRef}
+                onInput={adjustInputWidth}
+                className="text-2xl w-20 focus:outline-none border-b-2 border-black"
               ></input>
               's music?
             </div>

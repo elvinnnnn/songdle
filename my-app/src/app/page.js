@@ -1,8 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import YoutubePlayer from "./components/YoutubePlayer";
 import Intro from "./components/Intro";
+import Waveform from "./components/Waveform";
+import PlayButton from "./components/PlayButton";
+import Lives from "./components/Lives";
 
 require("dotenv").config({ path: "songdle/my-app/.env.local" });
 // Access environment variables
@@ -15,42 +17,11 @@ const auth_token = Buffer.from(
 ).toString("base64");
 
 export default function Home() {
-  const [artist, setArtist] = useState("");
   const [tracks, setTracks] = useState([]);
   const [videoId, setVideoId] = useState("");
   const [page, setPage] = useState("intro");
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-
-  const prevIndex = () => {
-    return currentTrackIndex > 0 ? currentTrackIndex - 1 : tracks.length - 1;
-  };
-
-  const nextIndex = () => {
-    return currentTrackIndex < tracks.length - 1 ? currentTrackIndex + 1 : 0;
-  };
-
-  const handlePrevClick = () => {
-    const newIndex = prevIndex();
-    setCurrentTrackIndex(newIndex);
-    playTrack(tracks[newIndex]);
-  };
-
-  const handleNextClick = () => {
-    const newIndex = nextIndex();
-    setCurrentTrackIndex(newIndex);
-    playTrack(tracks[newIndex]);
-  };
-
-  const playAgain = () => {
-    setVideoId("");
-    setTimeout(() => {
-      playTrack(tracks[currentTrackIndex]);
-    }, 0);
-  };
-
-  const handleArtistChange = (e) => {
-    setArtist(e.target.value);
-  };
+  const [artist, setArtist] = useState("");
+  const [score, setScore] = useState(0);
 
   const handleTracksChange = (tracks) => {
     setTracks(tracks);
@@ -58,8 +29,9 @@ export default function Home() {
 
   const handleButtonClick = async (artist) => {
     setPage("game");
+    setArtist(artist);
     const query = artist.replace(/ /g, "+");
-    await getTracks(query);
+    await getTracks(query, artist);
   };
 
   const handleToIntro = () => {
@@ -87,10 +59,10 @@ export default function Home() {
     }
   };
 
-  const getTracks = async (artist) => {
+  const getTracks = async (query, artist) => {
     const token = await getSpotifyAccessToken();
     const playlist_res = await axios.get(
-      `https://api.spotify.com/v1/search?q=this+is+${artist}&type=playlist&limit=1&offset=0`,
+      `https://api.spotify.com/v1/search?q=this+is+${query}&type=playlist&limit=1&offset=0`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -99,7 +71,7 @@ export default function Home() {
     );
     const playlist_id = playlist_res.data.playlists.items[0].id;
     const tracks_res = await axios.get(
-      `https://api.spotify.com/v1/playlists/${playlist_id}/tracks?fields=items%28track%28name,uri%29%29&limit=20&offset=0`,
+      `https://api.spotify.com/v1/playlists/${playlist_id}/tracks?fields=items%28track%28name,uri%29%29&limit=10&offset=0`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -114,17 +86,35 @@ export default function Home() {
     });
     console.log(tracks);
     handleTracksChange(tracks);
-    playTrack(tracks[0]);
+    // playTrack(tracks[0], artist);
   };
 
-  const playTrack = async (track) => {
-    const query = `${artist} ${track.name} audio`;
-    const res = await axios.get(
-      `https://www.googleapis.com/youtube/v3/search?key=AIzaSyA8F2vcphh6vSflDWsqs3ZP5e7epPh7ioA&q=${query}&type=video&part=snippet&maxResults=1`
-    );
+  const playTrack = async (index, artist) => {
+    try {
+      const track = tracks[index];
+      const query = `${artist} ${track.name} audio`;
+      const res = await axios.get(
+        `https://www.googleapis.com/youtube/v3/search?key=AIzaSyA8F2vcphh6vSflDWsqs3ZP5e7epPh7ioA&q=${query}&type=video&part=snippet&maxResults=1`
+      );
 
-    const videoId = res.data.items[0].id.videoId;
-    setVideoId(videoId);
+      if (res.data.items.length > 0) {
+        const videoId = res.data.items[0].id.videoId;
+        setVideoId(videoId);
+        console.log(videoId);
+      } else {
+        console.error("No video found for the query:", query);
+      }
+    } catch (error) {
+      console.error("Error fetching video:", error);
+    }
+  };
+
+  const handleScoreChange = (correct) => {
+    if (correct) {
+      setScore(score + 1);
+    } else {
+      console.log("Wrong");
+    }
   };
 
   return (
@@ -132,48 +122,50 @@ export default function Home() {
       {page == "intro" ? (
         <Intro onButtonClick={handleButtonClick} />
       ) : (
-        <div>
-          <button onClick={handleToIntro} className="text-5xl font-bold">
+        <div className="relative">
+          <button
+            onClick={handleToIntro}
+            className="fixed top-0 left-0 text-4xl font-bold"
+          >
             Songdle.
           </button>
-          <div>
-            {tracks.length > 0 ? (
-              <>
-                <iframe
-                  width="560"
-                  height="315"
-                  src={`https://www.youtube.com/embed/${videoId}?start=10&end=11&autoplay=1`}
-                  allow="autoplay"
-                  style={{
-                    position: "absolute",
-                    width: 0,
-                    height: 0,
-                    border: 0,
-                  }}
-                ></iframe>
-                <button
-                  className="block bg-black hover:bg-neutral-800 w-full p-4 text-white font-bold py-2 px-4 rounded-full"
-                  onClick={handlePrevClick}
-                >
-                  {" "}
-                  Prev{" "}
-                </button>
-                <button
-                  className="block bg-black hover:bg-neutral-800 w-full p-4 text-white font-bold py-2 px-4 rounded-full"
-                  onClick={handleNextClick}
-                >
-                  {" "}
-                  Next{" "}
-                </button>
-                <button
-                  className="block bg-black hover:bg-neutral-800 w-full p-4 text-white font-bold py-2 px-4 rounded-full"
-                  onClick={playAgain}
-                >
-                  {" "}
-                  Replay{" "}
-                </button>
-              </>
-            ) : null}
+          <div className="flex h-screen justify-center items-center">
+            <div className="flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow min-w-[515px] w-auto h-auto p-4">
+              <div className="grid gap-4 grid-rows-4 place-items-center">
+                {tracks.length > 0 ? (
+                  <>
+                    {tracks.map((track, index) => (
+                      <div id={index} key={index} className="flex p-1">
+                        <button
+                          onClick={() => playTrack(index, artist)}
+                          className="pr-1"
+                        >
+                          <PlayButton />
+                        </button>
+                        <Lives lives={3} />
+                        <Waveform
+                          trackName={track.name}
+                          handleScoreChange={handleScoreChange}
+                        />
+                      </div>
+                    ))}
+                    <iframe
+                      width="560"
+                      height="315"
+                      src={`https://www.youtube.com/embed/${videoId}?start=10&end=11&autoplay=1`}
+                      allow="autoplay"
+                      style={{
+                        position: "absolute",
+                        width: 0,
+                        height: 0,
+                        border: 0,
+                      }}
+                    ></iframe>
+                    <div className="text-2xl">{score} / 10</div>
+                  </>
+                ) : null}
+              </div>
+            </div>
           </div>
         </div>
       )}
