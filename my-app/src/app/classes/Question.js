@@ -1,27 +1,53 @@
 export default class Question {
-  solved = false;
-  lives = 3;
-  alive = true;
-  constructor(answer) {
-    this.answer = answer;
+  constructor(name) {
+    this._solved = false;
+    this._lives = 3;
+    this._alive = true;
+    this._name = name;
+    this._input = "";
+    this._border = "";
   }
 
   get lives() {
-    return this.lives;
+    return this._lives;
   }
 
   get solved() {
-    return this.solved;
+    return this._solved;
   }
 
-  get answer() {
-    return this.answer;
+  get name() {
+    return this._name;
+  }
+
+  get alive() {
+    return this._alive;
+  }
+
+  get border() {
+    return this._border;
+  }
+
+  set border(value) {
+    this._border = value;
+  }
+
+  set solved(value) {
+    this._solved = value;
+  }
+
+  get input() {
+    return this._input;
+  }
+
+  set input(value) {
+    this._input = value;
   }
 
   removeLife() {
-    this.lives -= 1;
-    if (this.lives == 0) {
-      this.alive = false;
+    this._lives -= 1;
+    if (this._lives == 0) {
+      this._alive = false;
     }
   }
 }

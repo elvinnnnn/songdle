@@ -5,6 +5,8 @@ import Intro from "./components/Intro";
 import Waveform from "./components/Waveform";
 import PlayButton from "./components/PlayButton";
 import Lives from "./components/Lives";
+import Question from "./classes/Question";
+import Unavailable from "./components/Unavailable";
 
 require("dotenv").config({ path: "songdle/my-app/.env.local" });
 // Access environment variables
@@ -21,7 +23,7 @@ export default function Home() {
   const [videoId, setVideoId] = useState("");
   const [page, setPage] = useState("intro");
   const [artist, setArtist] = useState("");
-  const [score, setScore] = useState(0);
+  const [refresh, setRefresh] = useState(false);
 
   const handleTracksChange = (tracks) => {
     setTracks(tracks);
@@ -32,11 +34,6 @@ export default function Home() {
     setArtist(artist);
     const query = artist.replace(/ /g, "+");
     await getTracks(query, artist);
-  };
-
-  const handleToIntro = () => {
-    setPage("intro");
-    setTracks([]);
   };
 
   const getSpotifyAccessToken = async () => {
@@ -71,7 +68,7 @@ export default function Home() {
     );
     const playlist_id = playlist_res.data.playlists.items[0].id;
     const tracks_res = await axios.get(
-      `https://api.spotify.com/v1/playlists/${playlist_id}/tracks?fields=items%28track%28name,uri%29%29&limit=10&offset=0`,
+      `https://api.spotify.com/v1/playlists/${playlist_id}/tracks?fields=items%28track%28name%29%29&limit=10&offset=0`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -79,17 +76,13 @@ export default function Home() {
       }
     );
     const tracks = tracks_res.data.items.map((item) => {
-      return {
-        name: item.track.name,
-        uri: item.track.uri,
-      };
+      return new Question(item.track.name);
     });
-    console.log(tracks);
     handleTracksChange(tracks);
     // playTrack(tracks[0], artist);
   };
 
-  const playTrack = async (index, artist) => {
+  const playTrack = async (question, index, artist) => {
     try {
       const track = tracks[index];
       const query = `${artist} ${track.name} audio`;
@@ -99,8 +92,11 @@ export default function Home() {
 
       if (res.data.items.length > 0) {
         const videoId = res.data.items[0].id.videoId;
-        setVideoId(videoId);
-        console.log(videoId);
+        setVideoId("");
+        setTimeout(() => {
+          setVideoId(videoId);
+        }, 100);
+        question.removeLife();
       } else {
         console.error("No video found for the query:", query);
       }
@@ -109,12 +105,16 @@ export default function Home() {
     }
   };
 
-  const handleScoreChange = (correct) => {
-    if (correct) {
-      setScore(score + 1);
-    } else {
-      console.log("Wrong");
-    }
+  const handleRefresh = () => {
+    setRefresh(!refresh);
+  };
+
+  const allSolved = (tracks) => {
+    return tracks.length > 0 && tracks.every((track) => track.solved);
+  };
+
+  const playAgain = () => {
+    window.location.reload();
   };
 
   return (
@@ -124,7 +124,7 @@ export default function Home() {
       ) : (
         <div className="relative">
           <button
-            onClick={handleToIntro}
+            onClick={playAgain}
             className="fixed top-0 left-0 text-4xl font-bold"
           >
             Songdle.
@@ -136,16 +136,23 @@ export default function Home() {
                   <>
                     {tracks.map((track, index) => (
                       <div id={index} key={index} className="flex p-1">
-                        <button
-                          onClick={() => playTrack(index, artist)}
-                          className="pr-1"
-                        >
-                          <PlayButton />
-                        </button>
-                        <Lives lives={3} />
+                        {track.alive ? (
+                          <button
+                            onClick={() => playTrack(track, index, artist)}
+                            className="pr-1"
+                          >
+                            <PlayButton solved={track.solved} />
+                          </button>
+                        ) : (
+                          <button disabled className="pr-1">
+                            <Unavailable solved={track.solved} />
+                          </button>
+                        )}
+                        <Lives lives={track.lives} solved={track.solved} />
                         <Waveform
-                          trackName={track.name}
-                          handleScoreChange={handleScoreChange}
+                          question={track}
+                          handleRefresh={handleRefresh}
+                          allSolved={() => allSolved(tracks)}
                         />
                       </div>
                     ))}
@@ -161,8 +168,17 @@ export default function Home() {
                         border: 0,
                       }}
                     ></iframe>
-                    <div className="text-2xl">{score} / 10</div>
                   </>
+                ) : null}
+                {allSolved(tracks) ? (
+                  <div className="flex items-center justify-center">
+                    <button
+                      onClick={playAgain}
+                      className="block bg-black hover:bg-neutral-800 w-full p-4 text-white font-bold py-2 px-4 rounded-full"
+                    >
+                      Play Again
+                    </button>
+                  </div>
                 ) : null}
               </div>
             </div>

@@ -1,7 +1,7 @@
 import React from "react";
 
-export default function Lives({ lives }) {
-  return (
+export default function Lives({ lives, solved }) {
+  return !solved ? (
     <div className="flex items-center pr-1">
       {lives === 1 ? (
         <img width="15px" src="/icons/onelife.png" alt="Heart" />
@@ -13,5 +13,5 @@ export default function Lives({ lives }) {
         <img width="15px" src="/icons/zerolife.png" alt="Heart" />
       )}
     </div>
-  );
+  ) : null;
 }
