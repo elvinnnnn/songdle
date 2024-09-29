@@ -1,11 +1,22 @@
 import React, { useState } from "react";
+import Question from "../classes/Question";
 
-export default function Waveform({ question, handleRefresh, allSolved }) {
+type WaveformProps = {
+  question: Question;
+  handleRefresh: () => void;
+  allSolved: () => boolean;
+};
+
+export default function Waveform({
+  question,
+  handleRefresh,
+  allSolved,
+}: WaveformProps) {
   const [isHovering, setIsHovered] = useState(false);
   const [answer, setAnswer] = useState("");
   const [reveal, setReveal] = useState(false);
 
-  const handleAnswerChange = (e) => {
+  const handleAnswerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAnswer(e.target.value);
   };
 

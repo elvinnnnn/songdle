@@ -1,6 +1,11 @@
 import React from "react";
 
-export default function Lives({ lives, solved }) {
+interface LivesProps {
+  lives: number;
+  solved: boolean;
+}
+
+export default function Lives({ lives, solved }: LivesProps) {
   return !solved ? (
     <div className="flex items-center pr-1">
       {lives === 1 ? (

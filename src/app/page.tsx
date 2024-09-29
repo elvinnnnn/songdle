@@ -18,29 +18,35 @@ const auth_token = Buffer.from(
   `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
 ).toString("base64");
 
+interface Item {
+  track: {
+    name: string;
+  };
+}
+
 export default function Home() {
-  const [tracks, setTracks] = useState([]);
+  const [tracks, setTracks] = useState<Array<Question>>([]);
   const [videoId, setVideoId] = useState("");
   const [page, setPage] = useState("intro");
   const [artist, setArtist] = useState("");
   const [refresh, setRefresh] = useState(false);
 
-  const handleTracksChange = (tracks) => {
+  const handleTracksChange = (tracks: Array<Question>) => {
     setTracks(tracks);
   };
 
-  const handleButtonClick = async (artist) => {
+  const handleButtonClick = async (artist: string) => {
     setPage("game");
     setArtist(artist);
     const query = artist.replace(/ /g, "+");
-    await getTracks(query, artist);
+    await getTracks(query);
   };
 
   const handleRefresh = () => {
     setRefresh(!refresh);
   };
 
-  const allSolved = (tracks) => {
+  const allSolved = (tracks: Array<Question>) => {
     return tracks.length > 0 && tracks.every((track) => track.solved);
   };
 
@@ -68,7 +74,7 @@ export default function Home() {
     }
   };
 
-  const getTracks = async (query) => {
+  const getTracks = async (query: string) => {
     const token = await getSpotifyAccessToken();
     const playlist_res = await axios.get(
       `https://api.spotify.com/v1/search?q=this+is+${query}&type=playlist&limit=1&offset=0`,
@@ -87,13 +93,17 @@ export default function Home() {
         },
       }
     );
-    const tracks = tracks_res.data.items.map((item) => {
+    const tracks = tracks_res.data.items.map((item: Item) => {
       return new Question(item.track.name);
     });
     handleTracksChange(tracks);
   };
 
-  const playTrack = async (question, index, artist) => {
+  const playTrack = async (
+    question: Question,
+    index: number,
+    artist: string
+  ) => {
     try {
       const track = tracks[index];
       const query = `${artist} ${track.name} audio`;
@@ -134,7 +144,7 @@ export default function Home() {
                 {tracks.length > 0 ? (
                   <>
                     {tracks.map((track, index) => (
-                      <div id={index} key={index} className="flex p-1">
+                      <div id={String(index)} key={index} className="flex p-1">
                         {track.alive ? (
                           <button
                             onClick={() => playTrack(track, index, artist)}
