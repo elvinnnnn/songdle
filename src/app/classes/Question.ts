@@ -1,5 +1,13 @@
 export default class Question {
-  constructor(name) {
+  private _solved: boolean;
+  private _lives: number;
+  private _alive: boolean;
+  private _name: string;
+  private _input: string;
+  private _border: string;
+  private _showAnswer: boolean;
+
+  constructor(name: string) {
     this._solved = false;
     this._lives = 3;
     this._alive = true;

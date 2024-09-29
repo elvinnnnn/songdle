@@ -1,10 +1,14 @@
 import React, { useEffect, useState, useRef } from "react";
 
-export default function Intro({ onButtonClick }) {
-  const [artist, setArtist] = useState("");
-  const inputRef = useRef(null);
+interface IntroProps {
+  onButtonClick: (artist: string) => void;
+}
 
-  const handleArtistChange = (e) => {
+export default function Intro({ onButtonClick }: IntroProps) {
+  const [artist, setArtist] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleArtistChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setArtist(e.target.value);
   };
   const handleButtonClick = () => {
@@ -13,11 +17,16 @@ export default function Intro({ onButtonClick }) {
 
   const adjustInputWidth = () => {
     const input = inputRef.current;
-    input.style.width = `${input.scrollWidth}px`;
+    if (input) {
+      input.style.width = `${input.scrollWidth}px`;
+    }
   };
   useEffect(() => {
+    const input = inputRef.current;
     if (artist === "") {
-      inputRef.current.style.width = "5rem";
+      if (input) {
+        input.style.width = "5rem";
+      }
     }
   }, [artist]);
   return (
