@@ -2,9 +2,8 @@ import React, { useState } from "react";
 
 export default function Waveform({ question, handleRefresh, allSolved }) {
   const [isHovering, setIsHovered] = useState(false);
-  const onMouseEnter = () => setIsHovered(true);
-  const onMouseLeave = () => setIsHovered(false);
   const [answer, setAnswer] = useState("");
+  const [reveal, setReveal] = useState(false);
 
   const handleAnswerChange = (e) => {
     setAnswer(e.target.value);
@@ -15,20 +14,24 @@ export default function Waveform({ question, handleRefresh, allSolved }) {
       .toLowerCase()
       .replace(/[^a-zA-Z ]/g, "");
     const userAnswer = answer.toLowerCase().replace(/[^a-zA-Z ]/g, "");
-    if (userAnswer === correctAnswer) {
-      question.border = "border-green-500";
-    } else {
-      question.border = "border-rose-500";
-    }
+    question.border =
+      userAnswer === correctAnswer ? "border-green-500" : "border-rose-500";
     question.solved = true;
     question.input = userAnswer;
     handleRefresh();
   };
 
+  const handleReveal = () => {
+    setReveal(!reveal);
+  };
+
   return (
     <>
       {!question.solved ? (
-        <div onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+        <div
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
           {isHovering ? (
             <div className="flex justify-center items-center p-[3.83px]">
               <input
@@ -37,7 +40,7 @@ export default function Waveform({ question, handleRefresh, allSolved }) {
                 value={answer}
                 onChange={handleAnswerChange}
                 className="text-4xl focus:outline-none border-b-2 border-black w-80"
-              ></input>
+              />
               <button className="pl-2" onClick={handleAnswer}>
                 <img width="42px" src="/icons/enter.png" alt="Enter" />
               </button>
@@ -47,11 +50,21 @@ export default function Waveform({ question, handleRefresh, allSolved }) {
           )}
         </div>
       ) : allSolved() ? (
-        <div
-          className={`flex items-center justify-center ${question.border} border-2 w-[450px] h-[58px]`}
-        >
-          <div className="text-2xl italic">{answer}</div>
-        </div>
+        <button onClick={handleReveal}>
+          {reveal ? (
+            <div
+              className={`flex items-center justify-center border-blue-500 border-2 w-[450px] h-[58px]`}
+            >
+              <div className="text-2xl italic">{question.name}</div>
+            </div>
+          ) : (
+            <div
+              className={`flex items-center justify-center ${question.border} border-2 w-[450px] h-[58px]`}
+            >
+              <div className="text-2xl italic">{answer}</div>
+            </div>
+          )}
+        </button>
       ) : (
         <div className="flex items-center justify-center border-2 w-[450px] h-[58px]">
           <div className="text-2xl italic">{answer}</div>

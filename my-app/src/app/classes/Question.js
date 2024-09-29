@@ -6,6 +6,11 @@ export default class Question {
     this._name = name;
     this._input = "";
     this._border = "";
+    this._showAnswer = false;
+  }
+
+  get showAnswer() {
+    return this._showAnswer;
   }
 
   get lives() {
@@ -42,6 +47,10 @@ export default class Question {
 
   set input(value) {
     this._input = value;
+  }
+
+  set showAnswer(value) {
+    this._showAnswer = value;
   }
 
   removeLife() {
