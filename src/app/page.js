@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import Intro from "./components/Intro";
 import Waveform from "./components/Waveform";
@@ -36,6 +36,18 @@ export default function Home() {
     await getTracks(query, artist);
   };
 
+  const handleRefresh = () => {
+    setRefresh(!refresh);
+  };
+
+  const allSolved = (tracks) => {
+    return tracks.length > 0 && tracks.every((track) => track.solved);
+  };
+
+  const playAgain = () => {
+    window.location.reload();
+  };
+
   const getSpotifyAccessToken = async () => {
     try {
       //make post request to SPOTIFY API for access token, sending relavent info
@@ -56,7 +68,7 @@ export default function Home() {
     }
   };
 
-  const getTracks = async (query, artist) => {
+  const getTracks = async (query) => {
     const token = await getSpotifyAccessToken();
     const playlist_res = await axios.get(
       `https://api.spotify.com/v1/search?q=this+is+${query}&type=playlist&limit=1&offset=0`,
@@ -79,7 +91,6 @@ export default function Home() {
       return new Question(item.track.name);
     });
     handleTracksChange(tracks);
-    // playTrack(tracks[0], artist);
   };
 
   const playTrack = async (question, index, artist) => {
@@ -103,18 +114,6 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching video:", error);
     }
-  };
-
-  const handleRefresh = () => {
-    setRefresh(!refresh);
-  };
-
-  const allSolved = (tracks) => {
-    return tracks.length > 0 && tracks.every((track) => track.solved);
-  };
-
-  const playAgain = () => {
-    window.location.reload();
   };
 
   return (
