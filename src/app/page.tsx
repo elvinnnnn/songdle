@@ -134,7 +134,7 @@ export default function Home() {
         <div className="relative">
           <button
             onClick={playAgain}
-            className="fixed top-0 left-0 text-4xl font-bold"
+            className="title fixed dark:text-white top-0 left-0 text-4xl font-bold"
           >
             Songdle.
           </button>
@@ -144,7 +144,11 @@ export default function Home() {
                 {tracks.length > 0 ? (
                   <>
                     {tracks.map((track, index) => (
-                      <div id={String(index)} key={index} className="flex p-1">
+                      <div
+                        id={String(index)}
+                        key={index}
+                        className="flex p-1 engraved"
+                      >
                         {track.alive ? (
                           <button
                             onClick={() => playTrack(track, index, artist)}
