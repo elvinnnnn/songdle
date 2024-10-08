@@ -6,6 +6,13 @@ interface PlayButtonProps {
 
 export default function PlayButton({ solved }: PlayButtonProps) {
   return !solved ? (
-    <img width="58px" src="/icons/playbutton.png" alt="playbutton" />
+    <div className="filter dark:invert">
+      <img
+        width="58px"
+        className="button"
+        src="/icons/playbutton.png"
+        alt="playbutton"
+      />
+    </div>
   ) : null;
 }

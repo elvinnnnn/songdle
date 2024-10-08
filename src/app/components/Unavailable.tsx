@@ -6,6 +6,13 @@ interface UnavailableProps {
 
 export default function Unavailable({ solved }: UnavailableProps) {
   return !solved ? (
-    <img width="58px" src="/icons/unavailable.png" alt="Unavailable" />
+    <div className="filter dark:invert">
+      <img
+        className="unavailable-icon filter dark:invert"
+        width="58px"
+        src="/icons/unavailable.png"
+        alt="Unavailable"
+      />
+    </div>
   ) : null;
 }
