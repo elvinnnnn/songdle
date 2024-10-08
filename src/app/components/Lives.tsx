@@ -7,7 +7,7 @@ interface LivesProps {
 
 export default function Lives({ lives, solved }: LivesProps) {
   return !solved ? (
-    <div className="flex items-center pr-1">
+    <div className="flex items-center pr-1 filter dark:invert">
       {lives === 1 ? (
         <img width="15px" src="/icons/onelife.png" alt="Heart" />
       ) : lives === 2 ? (

@@ -1,12 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
-import Intro from "./components/Intro";
-import Waveform from "./components/Waveform";
-import PlayButton from "./components/PlayButton";
-import Lives from "./components/Lives";
+import { Waveform, PlayButton, Lives, Unavailable } from "./components";
 import Question from "./classes/Question";
-import Unavailable from "./components/Unavailable";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 
 require("dotenv").config({ path: "songdle/my-app/.env.local" });
 // Access environment variables
@@ -19,27 +17,35 @@ const auth_token = Buffer.from(
 ).toString("base64");
 
 interface Item {
-  track: {
-    name: string;
+  name: string;
+}
+
+interface TracksResponse {
+  tracks: {
+    items: Item[];
   };
 }
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [tracks, setTracks] = useState<Array<Question>>([]);
   const [videoId, setVideoId] = useState("");
-  const [page, setPage] = useState("intro");
-  const [artist, setArtist] = useState("");
   const [refresh, setRefresh] = useState(false);
+  const artist = searchParams.get("artist")?.replace(/ /g, "+") ?? "";
+
+  useEffect(() => {
+    if (artist === "") {
+      router.push("/intro");
+    }
+    const fetchTracks = async () => {
+      await getTracks(artist);
+    };
+    fetchTracks();
+  }, []);
 
   const handleTracksChange = (tracks: Array<Question>) => {
     setTracks(tracks);
-  };
-
-  const handleButtonClick = async (artist: string) => {
-    setPage("game");
-    setArtist(artist);
-    const query = artist.replace(/ /g, "+");
-    await getTracks(query);
   };
 
   const handleRefresh = () => {
@@ -48,10 +54,6 @@ export default function Home() {
 
   const allSolved = (tracks: Array<Question>) => {
     return tracks.length > 0 && tracks.every((track) => track.solved);
-  };
-
-  const playAgain = () => {
-    window.location.reload();
   };
 
   const getSpotifyAccessToken = async () => {
@@ -76,26 +78,19 @@ export default function Home() {
 
   const getTracks = async (query: string) => {
     const token = await getSpotifyAccessToken();
-    const playlist_res = await axios.get(
-      `https://api.spotify.com/v1/search?q=this+is+${query}&type=playlist&limit=1&offset=0`,
+    const res = await axios.get(
+      `https://api.spotify.com/v1/search?q=artist%3A${query}&type=track&market=AU&limit=10`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       }
     );
-    const playlist_id = playlist_res.data.playlists.items[0].id;
-    const tracks_res = await axios.get(
-      `https://api.spotify.com/v1/playlists/${playlist_id}/tracks?fields=items%28track%28name%29%29&limit=10&offset=0`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    const tracks = (res.data as TracksResponse).tracks.items.map(
+      (item: Item) => {
+        return new Question(item.name);
       }
     );
-    const tracks = tracks_res.data.items.map((item: Item) => {
-      return new Question(item.track.name);
-    });
     handleTracksChange(tracks);
   };
 
@@ -127,73 +122,71 @@ export default function Home() {
   };
 
   return (
-    <div>
-      {page == "intro" ? (
-        <Intro onButtonClick={handleButtonClick} />
-      ) : (
-        <div className="relative">
-          <button
-            onClick={playAgain}
-            className="fixed top-0 left-0 text-4xl font-bold"
-          >
-            Songdle.
-          </button>
-          <div className="flex h-screen justify-center items-center">
-            <div className="flex items-center justify-center bg-white border border-gray-200 rounded-lg shadow min-w-[515px] w-auto h-auto p-4">
-              <div className="grid gap-4 grid-rows-4 place-items-center">
-                {tracks.length > 0 ? (
-                  <>
-                    {tracks.map((track, index) => (
-                      <div id={String(index)} key={index} className="flex p-1">
-                        {track.alive ? (
-                          <button
-                            onClick={() => playTrack(track, index, artist)}
-                            className="pr-1"
-                          >
-                            <PlayButton solved={track.solved} />
-                          </button>
-                        ) : (
-                          <button disabled className="pr-1">
-                            <Unavailable solved={track.solved} />
-                          </button>
-                        )}
-                        <Lives lives={track.lives} solved={track.solved} />
-                        <Waveform
-                          question={track}
-                          handleRefresh={handleRefresh}
-                          allSolved={() => allSolved(tracks)}
-                        />
-                      </div>
-                    ))}
-                    <iframe
-                      width="560"
-                      height="315"
-                      src={`https://www.youtube.com/embed/${videoId}?start=10&end=11&autoplay=1`}
-                      allow="autoplay"
-                      style={{
-                        position: "absolute",
-                        width: 0,
-                        height: 0,
-                        border: 0,
-                      }}
-                    ></iframe>
-                  </>
-                ) : null}
-                {allSolved(tracks) ? (
-                  <div className="flex items-center justify-center">
-                    <button
-                      onClick={playAgain}
-                      className="block bg-black hover:bg-neutral-800 w-full p-4 text-white font-bold py-2 px-4 rounded-full"
-                    >
-                      Play Again
-                    </button>
+    <div className="relative">
+      <Link
+        href="/intro"
+        className="title fixed dark:text-white top-0 left-0 text-4xl font-bold"
+      >
+        Songdle.
+      </Link>
+      <div className="flex h-screen justify-center items-center">
+        <div className="flex items-center justify-center">
+          <div className="grid gap-4 grid-rows-4 place-items-center">
+            {tracks.length > 0 ? (
+              <>
+                {tracks.map((track, index) => (
+                  <div
+                    id={String(index)}
+                    key={index}
+                    className="flex p-1 engraved"
+                  >
+                    {track.alive ? (
+                      <button
+                        onClick={() => playTrack(track, index, artist)}
+                        className="pr-1"
+                      >
+                        <PlayButton solved={track.solved} />
+                      </button>
+                    ) : (
+                      <button disabled className="pr-1">
+                        <Unavailable solved={track.solved} />
+                      </button>
+                    )}
+                    <Lives lives={track.lives} solved={track.solved} />
+                    <Waveform
+                      question={track}
+                      handleRefresh={handleRefresh}
+                      allSolved={() => allSolved(tracks)}
+                    />
                   </div>
-                ) : null}
+                ))}
+                <iframe
+                  width="560"
+                  height="315"
+                  src={`https://www.youtube.com/embed/${videoId}?start=10&end=11&autoplay=1`}
+                  allow="autoplay"
+                  style={{
+                    position: "absolute",
+                    width: 0,
+                    height: 0,
+                    border: 0,
+                  }}
+                ></iframe>
+              </>
+            ) : null}
+            {allSolved(tracks) ? (
+              <div className="flex items-center justify-center">
+                <Link
+                  href="/intro"
+                  className="button block bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200 w-full p-4  font-bold py-2 px-4 rounded-full"
+                >
+                  Let's Play!
+                </Link>
               </div>
-            </div>
+            ) : null}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
