@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Waveform, PlayButton, Lives, Unavailable } from "./components";
+import { Track, Embed } from "./components";
 import Question from "./classes/Question";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -16,13 +16,9 @@ const auth_token = Buffer.from(
   `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
 ).toString("base64");
 
-interface Item {
-  name: string;
-}
-
 interface TracksResponse {
   tracks: {
-    items: Item[];
+    items: { name: string }[];
   };
 }
 
@@ -43,18 +39,6 @@ export default function Home() {
     };
     fetchTracks();
   }, []);
-
-  const handleTracksChange = (tracks: Array<Question>) => {
-    setTracks(tracks);
-  };
-
-  const handleRefresh = () => {
-    setRefresh(!refresh);
-  };
-
-  const allSolved = (tracks: Array<Question>) => {
-    return tracks.length > 0 && tracks.every((track) => track.solved);
-  };
 
   const getSpotifyAccessToken = async () => {
     try {
@@ -87,11 +71,11 @@ export default function Home() {
       }
     );
     const tracks = (res.data as TracksResponse).tracks.items.map(
-      (item: Item) => {
+      (item: { name: string }) => {
         return new Question(item.name);
       }
     );
-    handleTracksChange(tracks);
+    setTracks(tracks);
   };
 
   const playTrack = async (
@@ -100,12 +84,10 @@ export default function Home() {
     artist: string
   ) => {
     try {
-      const track = tracks[index];
-      const query = `${artist} ${track.name} audio`;
+      const query = `${artist} ${tracks[index].name} audio`;
       const res = await axios.get(
         `https://www.googleapis.com/youtube/v3/search?key=AIzaSyA8F2vcphh6vSflDWsqs3ZP5e7epPh7ioA&q=${query}&type=video&part=snippet&maxResults=1`
       );
-
       if (res.data.items.length > 0) {
         const videoId = res.data.items[0].id.videoId;
         setVideoId("");
@@ -119,6 +101,10 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching video:", error);
     }
+  };
+
+  const allSolved = (tracks: Array<Question>) => {
+    return tracks.length > 0 && tracks.every((track) => track.solved);
   };
 
   return (
@@ -135,43 +121,16 @@ export default function Home() {
             {tracks.length > 0 ? (
               <>
                 {tracks.map((track, index) => (
-                  <div
-                    id={String(index)}
-                    key={index}
-                    className="flex p-1 engraved"
-                  >
-                    {track.alive ? (
-                      <button
-                        onClick={() => playTrack(track, index, artist)}
-                        className="pr-1"
-                      >
-                        <PlayButton solved={track.solved} />
-                      </button>
-                    ) : (
-                      <button disabled className="pr-1">
-                        <Unavailable solved={track.solved} />
-                      </button>
-                    )}
-                    <Lives lives={track.lives} solved={track.solved} />
-                    <Waveform
-                      question={track}
-                      handleRefresh={handleRefresh}
-                      allSolved={() => allSolved(tracks)}
-                    />
-                  </div>
+                  <Track
+                    track={track}
+                    index={index}
+                    artist={artist}
+                    playTrack={playTrack}
+                    handleRefresh={() => setRefresh(!refresh)}
+                    allSolved={() => allSolved(tracks)}
+                  />
                 ))}
-                <iframe
-                  width="560"
-                  height="315"
-                  src={`https://www.youtube.com/embed/${videoId}?start=10&end=11&autoplay=1`}
-                  allow="autoplay"
-                  style={{
-                    position: "absolute",
-                    width: 0,
-                    height: 0,
-                    border: 0,
-                  }}
-                ></iframe>
+                <Embed videoId={videoId} />
               </>
             ) : null}
             {allSolved(tracks) ? (

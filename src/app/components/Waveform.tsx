@@ -7,6 +7,16 @@ type WaveformProps = {
   allSolved: () => boolean;
 };
 
+const Answer = ({ answer, border }: { answer: string; border: string }) => {
+  return (
+    <div
+      className={`answer flex items-center justify-center ${border} border-2 w-[450px] h-[58px]`}
+    >
+      <div className="text-2xl italic text-black dark:text-white">{answer}</div>
+    </div>
+  );
+};
+
 export default function Waveform({
   question,
   handleRefresh,
@@ -76,29 +86,13 @@ export default function Waveform({
       ) : allSolved() ? (
         <button onClick={handleReveal}>
           {reveal ? (
-            <div
-              className={`answer flex items-center justify-center border-blue-500 border-2 w-[450px] h-[58px]`}
-            >
-              <div className="text-2xl italic text-black dark:text-white">
-                {question.name}
-              </div>
-            </div>
+            <Answer answer={question.name} border={"border-blue-500"} />
           ) : (
-            <div
-              className={`answer flex items-center justify-center ${question.border} border-2 w-[450px] h-[58px]`}
-            >
-              <div className="text-2xl italic text-black dark:text-white">
-                {answer}
-              </div>
-            </div>
+            <Answer answer={answer} border={question.border} />
           )}
         </button>
       ) : (
-        <div className="answer flex items-center justify-center border-2 w-[450px] h-[58px]">
-          <div className="text-2xl italic text-black dark:text-white">
-            {answer}
-          </div>
-        </div>
+        <Answer answer={answer} border={"border-2"} />
       )}
     </div>
   );

@@ -7,6 +7,15 @@ export default function Intro() {
   const [artist, setArtist] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    const input = inputRef.current;
+    if (artist === "") {
+      if (input) {
+        input.style.width = "5rem";
+      }
+    }
+  }, [artist]);
+
   const handleArtistChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setArtist(e.target.value);
   };
@@ -17,14 +26,7 @@ export default function Intro() {
       input.style.width = `${input.scrollWidth}px`;
     }
   };
-  useEffect(() => {
-    const input = inputRef.current;
-    if (artist === "") {
-      if (input) {
-        input.style.width = "5rem";
-      }
-    }
-  }, [artist]);
+
   return (
     <div className="flex flex-col h-screen justify-center items-center">
       <Image
